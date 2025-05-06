@@ -364,3 +364,6 @@ class Parameter_Filiter_Notch(ParameterFilter):
     @filter_style.setter
     def filter_style(self):
         raise ValueError("The 'filter_style' attribute is read-only and cannot be modified.")
+    
+class Test:
+    ...
