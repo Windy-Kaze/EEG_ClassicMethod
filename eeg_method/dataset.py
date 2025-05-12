@@ -11,6 +11,14 @@ class DataSet:
     '''
     数据集类，用于加载和处理 EEG 数据集。
     
+    Args:
+        file_address (str): 数据集文件地址。
+        
+    Exception:
+        ValueError: 如果数据集的基本信息未设置。
+        TypeError: 如果info不是Parameter_DataOtherInfo的实例。
+        TypeError: 如果filter_paraclass不是ParameterFilter的实例。
+。
     '''
     def __init__(self, file_address: str) -> None:   
         self.data_address = file_address
@@ -66,6 +74,14 @@ class DataSet:
                 if not self.info_indextuple:
                     raise ValueError("info_indextuple is not set")        
         def split_data(data: np.ndarray, label: np.ndarray,self=self) -> Tuple[np.ndarray,np.ndarray,np.ndarray,np.ndarray]:
+            
+            if(self.dataset_otherinfo.kfold_splits==1):
+                train_data = data
+                test_data = data
+                train_labels = label
+                test_labels = label
+                return train_data, test_data, train_labels, test_labels
+    
             kfold = KFold(n_splits=self.dataset_otherinfo.kfold_splits,shuffle=True, random_state=42)
             # 对最后一个维度（block）进行划分
             for train_idx, test_idx in kfold.split(range(data.shape[-1])):
@@ -114,7 +130,7 @@ class DataSet:
         if not isinstance(filter_paraclass, ParameterFilter) or type(filter_paraclass) is ParameterFilter:
             raise TypeError("self.filter_paraclass must be an instance of a subclass of ParameterFilter") 
         
-        self.filter=Filter(parameterfilter=filter_paraclass,fs=self.fs)
+        self.filter=_Filter(parameterfilter=filter_paraclass,fs=self.fs)
         self.train_data=signal.filtfilt(self.filter.b, self.filter.a, self.train_data,axis=1)
         self.test_data=signal.filtfilt(self.filter.b, self.filter.a, self.test_data,axis=1)
 
@@ -123,7 +139,7 @@ class DataSet:
         ...
 
 
-class Filter:
+class _Filter:
     def __init__(self,parameterfilter:ParameterFilter,fs:float) -> None:
         self.filter_paraclass=parameterfilter
         self.fs=fs
@@ -137,31 +153,37 @@ class Filter:
     def __parameter_loader(self)->None:
         self.type=self.filter_paraclass.type
         self.style=self.filter_paraclass.fliter_style
+        self.n=self.filter_paraclass.n
 
+    def __cheby1(self,n:int,Wn:Union[float,tuple],btype:str,rp=0.5):
+        return signal.cheby1(N=n, rp=rp, Wn=Wn,btype=btype)
+    
 
     def __structure_filter(self,type,style):
         if(style==Define_Filiter.BUTTER):
             my_filter=signal.butter
         elif(style==Define_Filiter.CHEBY):
-            my_filter=signal.cheby1
-            
+            my_filter=self.__cheby1
+ 
         elif(style==Define_Filiter.NOTCH):
             my_filter=signal.iirnotch
     
         if(type==Define_Filiter.BAND):
             ws_wp=(self.filter_paraclass.ws_wp[0],self.filter_paraclass.ws_wp[1])
-            low = ws_wp[0]/ self.nyquistnyquist
-            high = ws_wp[1] / self.nyquistnyquist
-            self.b, self.a = my_filter(4, [low, high], btype='band')
+            low = ws_wp[0]/ self.nyquist
+            high = ws_wp[1] / self.nyquist
+            self.b, self.a = my_filter(self.n,(low, high), btype='band')
 
         elif(type==Define_Filiter.HIGH):
             self.ws=self.filter_paraclass.ws
             ws = self.ws / self.nyquist
-            self.b, self.a = my_filter(4, ws, btype='high')
+            self.b, self.a = my_filter(self.n, ws, btype='high')
+            
         elif(type==Define_Filiter.LOW):
             self.ws=self.filter_paraclass.ws
             ws = self.ws / self.nyquist
-            self.b, self.a = my_filter(4, ws, btype='low')
+            self.b, self.a = my_filter(self.n, ws, btype='low')
+            
         elif(type==Define_Filiter.NOTCH):
             self.notch_wp=(self.filter_paraclass.notch_wp)
             notch_wp = self.notch_wp / self.nyquist

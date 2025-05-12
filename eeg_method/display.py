@@ -1,6 +1,6 @@
 
 def wranning(msg):
-    print(f"\033[93m{msg}\033[0m")  # Yellow text
+    print(f"\033[93m Warning:{msg} \033[0m")  # Yellow text
     
 def plot_shark_img():
 

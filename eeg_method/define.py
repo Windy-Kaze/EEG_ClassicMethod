@@ -1,3 +1,5 @@
+from eeg_method.display import wranning
+
 
 class Define_Dataset:
     KFOLD_SPLITER_DEFAULT=5
@@ -10,11 +12,11 @@ class Flag_counter:
         return cls.__count
 
 class Define_Filiter:
-    _LOW=Flag_counter.count()
-    _HIGH=Flag_counter.count()
-    _BAND=Flag_counter.count()
-    _NOTCH=Flag_counter.count()
-    _MAX_CHEBY_N=5
+    LOW=Flag_counter.count()
+    HIGH=Flag_counter.count()
+    BAND=Flag_counter.count()
+    NOTCH=Flag_counter.count()
+    MAX_CHEBY_N=5
     
     BUTTER=Flag_counter.count()
     CHEBY=Flag_counter.count()
@@ -34,6 +36,7 @@ class ParameterFilter():
     fliter_style: int = -1
     ws_wp = (0,0)
     ws=0.0
+    n=4
     
     @property
     def type(self):
@@ -59,6 +62,7 @@ class Parameter_DataOtherInfo():
     _train_num=0
     _kfold_splits=Define_Dataset.KFOLD_SPLITER_DEFAULT
     _itr_t=0.5
+
 
     @property
     def itr_t(self):
@@ -137,15 +141,6 @@ class Parameter_Filiter_Low(ParameterFilter):
         self._ws=0
         self._n=4
     
-
-    def check_n(self):
-        if self._fliter_style=="":
-            raise ValueError("The 'fliter_style' attribute must be set before checking 'n'.")
-        
-        if self._fliter_style==Define_Filiter.CHEBY:
-            if self._n>Define_Filiter._MAX_CHEBY_N:
-                raise ValueError("The 'n' attribute must be less than or equal to Define_Filiter._MAX_CHEBY_N.")
-            
     @property
     def n(self):
         return self._n
@@ -166,8 +161,9 @@ class Parameter_Filiter_Low(ParameterFilter):
     def n(self, value):
         if not isinstance(value, int):
             raise TypeError("The 'n' attribute must be of type int.")
-        self.check_n()
-        self._n = value
+        if value>5:
+            wranning("The 'n' arrtibute probably be too large")
+            
         
     @fliter_style.setter
     def fliter_style(self, value):
@@ -204,14 +200,6 @@ class Parameter_Filiter_High(ParameterFilter):
         self._ws=0
         self._n=4
 
-    def check_n(self):
-        if self._fliter_style=="":
-            raise ValueError("The 'fliter_style' attribute must be set before checking 'n'.")
-
-        if self._fliter_style==Define_Filiter.CHEBY:
-            if self._n>Define_Filiter._MAX_CHEBY_N:
-                raise ValueError("The 'n' attribute must be less than or equal to Define_Filiter._MAX_CHEBY_N.")
-    
     @property
     def n(self):
         return self._n
@@ -227,12 +215,14 @@ class Parameter_Filiter_High(ParameterFilter):
     def fliter_style(self):
         return self._fliter_style
     
+    
     @n.setter
     def n(self, value):
         if not isinstance(value, int):
             raise TypeError("The 'n' attribute must be of type int.")
-        self.check_n()
-        self._n = value
+        if value>5:
+            wranning("The 'n' arrtibute probably be too large")
+            
         
     @fliter_style.setter
     def fliter_style(self, value):
@@ -265,19 +255,11 @@ class Parameter_Filiter_Band(ParameterFilter):
             - 设置时，必须为包含两个 int 或 float 的元组，否则抛出 TypeError。
     """
     def __init__(self):
-        self. _type = Define_Filiter._BAND
+        self. _type = Define_Filiter.BAND
         self._fliter_style:str=""
         self._ws_wp=()
         self._n=4
 
-
-    def check_n(self):
-        if self._fliter_style=="":
-            raise ValueError("The 'fliter_style' attribute must be set before checking 'n'.")
-        
-        if self._fliter_style==Define_Filiter.CHEBY:
-            if self._n>Define_Filiter._MAX_CHEBY_N:
-                raise ValueError("The 'n' attribute must be less than or equal to Define_Filiter._MAX_CHEBY_N.")
             
     @property
     def n(self):
@@ -299,8 +281,10 @@ class Parameter_Filiter_Band(ParameterFilter):
     def n(self, value):
         if not isinstance(value, int):
             raise TypeError("The 'n' attribute must be of type int.")
-        self.check_n()
-        self._n = value
+        if value>5:
+            wranning("The 'n' arrtibute probably be too large")
+            
+            
     
     @fliter_style.setter
     def fliter_style(self, value):
@@ -329,7 +313,7 @@ class Parameter_Filiter_Notch(ParameterFilter):
     Attributes:
         _type (ReadOnly->int): 滤波器类型，固定为 Define_Filiter.NOTCH。
         notch_wp (float): 滤波器的截止频率，必须为 int 或 float 类型。
-        filter_style (ReadOnly->int): 滤波器样式,固定为 Define_Filiter._NOTCH,此参数是为了其他一般滤波器对齐参数(不影响功能)。
+        filter_style (ReadOnly->int): 滤波器样式,固定为 Define_Filiter.NOTCH,此参数是为了其他一般滤波器对齐参数(不影响功能)。
         
     Methods:
         type: 获取滤波器类型（只读）。
@@ -337,8 +321,8 @@ class Parameter_Filiter_Notch(ParameterFilter):
         filter_style: 获取滤波器样式（只读）。
             - 设置时，必须为 int 或 float 类型，否则抛出 TypeError。
     """
-    _type = Define_Filiter._NOTCH
-    _filter_style=Define_Filiter._NOTCH
+    _type = Define_Filiter.NOTCH
+    _filter_style=Define_Filiter.NOTCH
     _notch_wp=50
 
     @property

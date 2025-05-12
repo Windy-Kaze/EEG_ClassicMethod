@@ -7,18 +7,23 @@ from eeg_method.dataset import DataSet
 
 class TRCA_Method():
     '''
-    数据集类,用于利用TRCA方法加载和处理 EEG 数据集。
+    用于利用TRCA方法加载和处理 EEG 数据集。
     该类提供了加载数据、添加基本信息、添加其他信息和添加滤波器参数等功能。
     Args:
         dataset (DataSet): 数据集对象。
         window_length (float): 窗口长度，范围在(0,1]之间。
-  
+       
+    Exception:
+        ValueError: 如果window_length不在(0,1]之间。
+        TypeError: 如果dataset不是DataSet的实例。
+    
     '''
     def __init__(self,dataset:DataSet,window_length=0.8) -> None:
         self.window_length = window_length
         self.dataset = dataset
         self.itr_t=self.dataset.dataset_otherinfo.itr_t
-        self.elctored_channel,self.time_points,self.targets_num,self.trains_block=self.dataset.train_data.shape
+        self.elctored_channel,_,self.targets_num,self.trains_block=self.dataset.train_data.shape
+        self.time_points=int(_*self.window_length)
         self.test_blocks=self.dataset.test_data.shape[3]
         
         self.__parameter_check()
@@ -29,9 +34,9 @@ class TRCA_Method():
         """
         处理数据集,将数据集划分为训练集和测试集及其标签,将其保存到类中，无需手动访问。
         """      
-        self.test_data = self.dataset.test_data
+        self.test_data = self.dataset.test_data[:,0:self.time_points,:,:]
         self.test_label_array=self.dataset.test_labels
-        self.train_data = np.array([])
+        self.train_data = self.dataset.train_data[:,0:self.time_points,:,:]
         
         ...
     def __parameter_check(self) -> None:
@@ -54,7 +59,7 @@ class TRCA_Method():
         trainavr_array = np.zeros(shape=(self.elctored_channel,self.time_points,self.targets_num))
       
         for targ_i in range(self.targets_num):
-            traindata = self.dataset.train_data[:, :,targ_i,:]
+            traindata = self.train_data[:, :,targ_i,:]
             trainavr_array[:,:,targ_i] = np.mean(traindata, 2)#￥￥在其他位置处理合并训练集数据较好
             w_tmp = self.__trca_method(traindata=traindata)
             w_array[targ_i, :] = np.real(w_tmp[:, 0]) #获取大特征向量
